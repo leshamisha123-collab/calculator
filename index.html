@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор потерянного времени</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #111111;
+            --bg-card: #161616;
+            --bg-hover: #1e1e1e;
+            --text-primary: #ffffff;
+            --text-secondary: #a8a8a8;
+            --text-muted: #6a6a6a;
+            --border: #262626;
+            --border-light: #333333;
+            --danger: #ff4d4d;
+            --success: #4dff88;
+            --transition: 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            letter-spacing: -0.01em;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 580px;
+            margin: 0 auto;
+            padding: 28px 20px 60px;
+        }
+        
+        /* === АНИМАЦИИ === */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        /* === ШАПКА === */
+        .header {
+            padding-bottom: 24px;
+            margin-bottom: 32px;
+            border-bottom: 1px solid var(--border);
+            animation: fadeUp 0.7s var(--transition);
+        }
+        
+        .header h1 {
+            font-size: 27px;
+            font-weight: 650;
+            letter-spacing: -0.035em;
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+        
+        .header .subtitle {
+            color: var(--text-secondary);
+            font-size: 15px;
+            font-weight: 400;
+            letter-spacing: -0.005em;
+        }
+        
+        /* === СЕКЦИИ === */
+        .section {
+            margin-bottom: 28px;
+            animation: fadeUp 0.7s var(--transition) 0.1s both;
+        }
+        
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+        
+        /* === СЛАЙДЕРЫ === */
+        .slider-group {
+            margin-bottom: 24px;
+        }
+        
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            gap: 12px;
+        }
+        
+        .slider-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            line-height: 1.3;
+        }
+        
+        .slider-label .hint {
+            display: block;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-top: 2px;
+        }
+        
+        .slider-value {
+            font-size: 14px;
+            font-weight: 650;
+            color: var(--text-primary);
+            background: var(--bg-card);
+            padding: 5px 14px;
+            border-radius: 6px;
+            min-width: 60px;
+            text-align: center;
+            border: 1px solid var(--border);
+            transition: all var(--transition);
+            flex-shrink: 0;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 3px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--border);
+            outline: none;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--bg-primary);
+            border: 2px solid var(--text-primary);
+            cursor: pointer;
+            transition: all 0.25s var(--transition);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: var(--text-primary);
+            transform: scale(1.15);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--bg-primary);
+            border: 2px solid var(--text-primary);
+            cursor: pointer;
+        }
+        
+        /* === ПЕРИОД === */
+        .period-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+        
+        .period-btn {
+            padding: 13px 6px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all var(--transition);
+            text-align: center;
+            font-family: inherit;
+        }
+        
+        .period-btn:hover {
+            border-color: var(--text-muted);
+            color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+        
+        .period-btn.active {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            border-color: var(--text-primary);
+            font-weight: 650;
+        }
+        
+        /* === КНОПКА РАСЧЁТА === */
+        .calculate-btn {
+            width: 100%;
+            padding: 17px;
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 650;
+            cursor: pointer;
+            letter-spacing: 0.01em;
+            transition: all var(--transition);
+            font-family: inherit;
+            animation: fadeUp 0.7s var(--transition) 0.2s both;
+        }
+        
+        .calculate-btn:hover {
+            background: #d5d5d5;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(255,255,255,0.08);
+        }
+        
+        .calculate-btn:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        
+        /* === РЕЗУЛЬТАТЫ === */
+        .results {
+            display: none;
+            margin-top: 36px;
+        }
+        
+        .results.show {
+            display: block;
+        }
+        
+        .result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 14px;
+            animation: fadeUp 0.6s var(--transition) both;
+        }
+        
+        .result-card:nth-child(1) { animation-delay: 0.05s; }
+        .result-card:nth-child(2) { animation-delay: 0.1s; }
+        .result-card:nth-child(3) { animation-delay: 0.15s; }
+        
+        .result-card h3 {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .stat-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        
+        .stat-row:first-of-type {
+            padding-top: 0;
+        }
+        
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .stat-value {
+            font-size: 14px;
+            font-weight: 650;
+            color: var(--text-primary);
+            text-align: right;
+            letter-spacing: -0.01em;
+        }
+        
+        .stat-value.danger {
+            color: var(--danger);
+        }
+        
+        .stat-value .rub {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-top: 2px;
+        }
+        
+        /* === НАВЫКИ === */
+        .skills-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 14px;
+            animation: fadeUp 0.6s var(--transition) 0.2s both;
+        }
+        
+        .skills-card h3 {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+        
+        .skill-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            animation: slideIn 0.4s var(--transition) both;
+        }
+        
+        .skill-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        
+        .skill-item:first-of-type {
+            padding-top: 0;
+        }
+        
+        .skill-number {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            min-width: 22px;
+            padding-top: 3px;
+            letter-spacing: 0.05em;
+        }
+        
+        .skill-name {
+            font-size: 14px;
+            color: var(--text-primary);
+            line-height: 1.45;
+            font-weight: 500;
+        }
+        
+        .skill-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+        
+        /* === ПОДОГРЕВ === */
+        .heating-block {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-left: 2px solid var(--text-primary);
+            border-radius: 0 14px 14px 0;
+            padding: 24px;
+            margin: 24px 0;
+            animation: fadeUp 0.6s var(--transition) 0.25s both;
+        }
+        
+        .heating-block .line {
+            font-size: 15px;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        
+        .heating-block .line:last-child {
+            margin-bottom: 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 400;
+            margin-top: 14px;
+            line-height: 1.5;
+        }
+        
+        .heating-block .accent {
+            font-weight: 700;
+        }
+        
+        /* === ТАРИФЫ === */
+        .tariffs-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin: 32px 0 16px;
+            animation: fadeUp 0.6s var(--transition) 0.3s both;
+        }
+        
+        .tariff {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 22px;
+            margin-bottom: 12px;
+            transition: all var(--transition);
+            animation: fadeUp 0.6s var(--transition) both;
+            cursor: pointer;
+        }
+        
+        .tariff:nth-child(2) { animation-delay: 0.35s; }
+        .tariff:nth-child(3) { animation-delay: 0.4s; }
+        .tariff:nth-child(4) { animation-delay: 0.45s; }
+        
+        .tariff:hover {
+            border-color: var(--border-light);
+            background: var(--bg-hover);
+            transform: translateY(-2px);
+        }
+        
+        .tariff.featured {
+            border-color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+        
+        .tariff-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
+            gap: 12px;
+        }
+        
+        .tariff-name {
+            font-size: 16px;
+            font-weight: 650;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+            line-height: 1.3;
+        }
+        
+        .tariff-badge {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            flex-shrink: 0;
+        }
+        
+        .tariff-price {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+        
+        .tariff-price-rub {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+        
+        .tariff-features {
+            list-style: none;
+            margin-bottom: 18px;
+        }
+        
+        .tariff-features li {
+            font-size: 13px;
+            color: var(--text-secondary);
+            padding: 4px 0 4px 18px;
+            position: relative;
+            line-height: 1.5;
+        }
+        
+        .tariff-features li::before {
+            content: "—";
+            position: absolute;
+            left: 0;
+            color: var(--text-muted);
+        }
+        
+        .tariff-btn {
+            width: 100%;
+            padding: 13px;
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: inherit;
+        }
+        
+        .tariff-btn:hover {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            border-color: var(--text-primary);
+        }
+        
+        .tariff.featured .tariff-btn {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            border-color: var(--text-primary);
+        }
+        
+        .tariff.featured .tariff-btn:hover {
+            background: #d5d5d5;
+        }
+        
+        /* === ССЫЛКА НА КАНАЛ === */
+        .channel-link {
+            text-align: center;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            animation: fadeUp 0.6s var(--transition) 0.5s both;
+        }
+        
+        .channel-link a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .channel-link a:hover {
+            color: var(--text-primary);
+        }
+        
+        /* === КНОПКИ ДЕЙСТВИЙ === */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+            animation: fadeUp 0.6s var(--transition) 0.22s both;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: inherit;
+        }
+        
+        .action-btn:hover {
+            border-color: var(--text-muted);
+            color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+        
+        .refresh-counter {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 10px;
+            animation: fadeIn 0.3s var(--transition);
+        }
+        
+        /* === МОДАЛЬНОЕ ОКНО === */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            max-width: 400px;
+            width: 100%;
+            animation: fadeUp 0.4s var(--transition);
+        }
+        
+        .modal-content h3 {
+            font-size: 18px;
+            font-weight: 650;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+        
+        .modal-content p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .modal-btn {
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            border: none;
+            font-family: inherit;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+        }
+        
+        .modal-btn.primary {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+        }
+        
+        .modal-btn.primary:hover {
+            background: #d5d5d5;
+        }
+        
+        .modal-btn.secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-light);
+        }
+        
+        .modal-btn.secondary:hover {
+            background: var(--bg-hover);
+        }
+        
+        .modal-btn.close {
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 500;
+            padding: 10px;
+        }
+        
+        .modal-btn.close:hover {
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ШАПКА -->
+        <div class="header">
+            <h1>Калькулятор потерянного времени</h1>
+            <p class="subtitle">Оцените реальную стоимость вашего времени</p>
+        </div>
+        
+        <!-- ПАРАМЕТРЫ -->
+        <div class="section">
+            <div class="section-title">Параметры</div>
+            
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">Часы за быстрым контентом</span>
+                    <span class="slider-value" id="socialValue">4 ч</span>
+                </div>
+                <input type="range" id="socialHours" min="1" max="12" value="4" step="1">
+            </div>
+            
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">Часы в играх</span>
+                    <span class="slider-value" id="gameValue">2 ч</span>
+                </div>
+                <input type="range" id="gameHours" min="0" max="12" value="2" step="1">
+            </div>
+            
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">
+                        Заработок в час
+                        <span class="hint">Примерно на вашей работе</span>
+                    </span>
+                    <span class="slider-value" id="salaryValue">$2</span>
+                </div>
+                <input type="range" id="salary" min="0" max="5" value="2" step="1">
+            </div>
+            
+            <div class="section-title">Период</div>
+            <div class="period-grid" id="periodButtons">
+                <button class="period-btn active" data-period="1 месяц" data-days="30">1 мес.</button>
+                <button class="period-btn" data-period="3 месяца" data-days="90">3 мес.</button>
+                <button class="period-btn" data-period="6 месяцев" data-days="180">6 мес.</button>
+                <button class="period-btn" data-period="12 месяцев" data-days="365">12 мес.</button>
+            </div>
+        </div>
+        
+        <button class="calculate-btn" onclick="calculate()">Рассчитать</button>
+        
+        <!-- РЕЗУЛЬТАТЫ -->
+        <div class="results" id="results"></div>
+    </div>
+    
+    <!-- МОДАЛЬНОЕ ОКНО -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Оформление</h3>
+            <p id="modalText">Выберите удобный способ связи</p>
+            <div class="modal-buttons">
+                <a href="#" id="modalTelegram" class="modal-btn primary" target="_blank">Написать в Telegram</a>
+                <a href="#" id="modalWhatsapp" class="modal-btn secondary" target="_blank">Написать в WhatsApp</a>
+                <button class="modal-btn close" onclick="closeModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.expand();
+            tg.setHeaderColor('#0a0a0a');
+            tg.setBackgroundColor('#0a0a0a');
+        }
+        
+        const USD_TO_RUB = 90;
+        const TELEGRAM_LINK = 'https://t.me/Byvon';
+        const WHATSAPP_LINK = 'https://wa.me/375257665835';
+        
+        let selectedPeriod = '1 месяц';
+        let selectedDays = 30;
+        let currentTotalHours = 0;
+        let refreshCount = 0;
+        let currentSkillSet = 0;
+        let currentProductName = '';
+        
+        // === БАЗА НАВЫКОВ ===
+        const skillsDatabase = [
+            // Здоровье
+            { name: "5 полноценных тренировок", hours: 10, category: "Здоровье" },
+            { name: "Регулярные тренировки 3 месяца", hours: 90, category: "Здоровье" },
+            { name: "Подготовка к забегу на 10 км", hours: 150, category: "Здоровье" },
+            { name: "Стать тренером по фитнесу", hours: 600, category: "Здоровье" },
+            { name: "Освоить йогу на базовом уровне", hours: 120, category: "Здоровье" },
+            
+            // Языки
+            { name: "500 базовых слов английского", hours: 60, category: "Языки" },
+            { name: "Английский до уровня B1", hours: 400, category: "Языки" },
+            { name: "Английский до уровня B2", hours: 600, category: "Языки" },
+            { name: "Английский до уровня C1", hours: 800, category: "Языки" },
+            { name: "Испанский на базовом уровне", hours: 200, category: "Языки" },
+            
+            // IT
+            { name: "Telegram-бот с нуля", hours: 80, category: "IT" },
+            { name: "Базовый Python", hours: 100, category: "IT" },
+            { name: "Веб-разработка: HTML, CSS, JS", hours: 300, category: "IT" },
+            { name: "Python для анализа данных", hours: 250, category: "IT" },
+            { name: "Full-stack разработчик", hours: 1000, category: "IT" },
+            { name: "Освоить ИИ-инструменты", hours: 60, category: "IT" },
+            
+            // Финансы
+            { name: "Финансовая грамотность", hours: 20, category: "Финансы" },
+            { name: "Инвестирование для начинающих", hours: 100, category: "Финансы" },
+            { name: "Криптовалюты: базовый курс", hours: 150, category: "Финансы" },
+            { name: "Инвестиционный портфель на практике", hours: 800, category: "Финансы" },
+            
+            // Творчество
+            { name: "Написать 3 коротких рассказа", hours: 25, category: "Творчество" },
+            { name: "Игра на гитаре: базовые аккорды", hours: 80, category: "Творчество" },
+            { name: "Монтаж видео: базовый уровень", hours: 90, category: "Творчество" },
+            { name: "Основы фотографии", hours: 70, category: "Творчество" },
+            { name: "Игра на гитаре: продвинутый", hours: 700, category: "Творчество" },
+            { name: "Написать книгу (черновик)", hours: 300, category: "Творчество" },
+            { name: "3D-моделирование: базовый", hours: 200, category: "Творчество" },
+            
+            // Навыки
+            { name: "Тайм-менеджмент", hours: 30, category: "Навыки" },
+            { name: "Ораторское мастерство", hours: 60, category: "Навыки" },
+            { name: "Публичные выступления: продвинутый", hours: 250, category: "Навыки" },
+            { name: "Проектное управление", hours: 400, category: "Навыки" },
+            
+            // Развитие
+            { name: "Прочитать 3 книги", hours: 30, category: "Развитие" },
+            { name: "Прочитать 10 книг", hours: 100, category: "Развитие" },
+            { name: "Прочитать 30 книг", hours: 300, category: "Развитие" },
+            { name: "Прочитать 100 книг", hours: 1000, category: "Развитие" },
+            
+            // Бизнес
+            { name: "Запустить свой блог", hours: 70, category: "Бизнес" },
+            { name: "Запустить онлайн-бизнес", hours: 600, category: "Бизнес" },
+            { name: "Построить команду", hours: 900, category: "Бизнес" }
+        ];
+        
+        // === СЛАЙДЕРЫ ===
+        document.getElementById('socialHours').addEventListener('input', function() {
+            document.getElementById('socialValue').textContent = this.value + ' ч';
+        });
+        
+        document.getElementById('gameHours').addEventListener('input', function() {
+            document.getElementById('gameValue').textContent = this.value + ' ч';
+        });
+        
+        document.getElementById('salary').addEventListener('input', function() {
+            document.getElementById('salaryValue').textContent = '$' + this.value;
+        });
+        
+        // === ПЕРИОД ===
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                selectedPeriod = this.dataset.period;
+                selectedDays = parseInt(this.dataset.days);
+            });
+        });
+        
+        // === ПОЛУЧЕНИЕ НАВЫКОВ ПО ВРЕМЕНИ ===
+        function getSkillsForTime(totalHours, setIndex) {
+            // Берём навыки, которые реально укладываются в 85% времени
+            const available = skillsDatabase.filter(s => s.hours <= totalHours * 0.85);
+            
+            // Сортируем по убыванию часов (сначала самые "крупные")
+            available.sort((a, b) => b.hours - a.hours);
+            
+            if (available.length === 0) {
+                // Если время совсем мало — берём самые маленькие
+                return skillsDatabase.slice(0, 4);
+            }
+            
+            // Выбираем 4 навыка из разных категорий
+            const selected = [];
+            const usedCategories = new Set();
+            
+            // Первый проход — по одной из каждой категории
+            for (let skill of available) {
+                if (selected.length >= 4) break;
+                if (!usedCategories.has(skill.category)) {
+                    selected.push(skill);
+                    usedCategories.add(skill.category);
+                }
+            }
+            
+            // Второй проход — если не набрали 4, добавляем остальные
+            if (selected.length < 4) {
+                for (let skill of available) {
+                    if (selected.length >= 4) break;
+                    if (!selected.includes(skill)) {
+                        selected.push(skill);
+                    }
+                }
+            }
+            
+            // Ротация для кнопки "Обновить"
+            if (setIndex > 0 && available.length > 4) {
+                const offset = (setIndex * 4) % available.length;
+                const rotated = [];
+                for (let i = 0; i < 4; i++) {
+                    const idx = (offset + i) % available.length;
+                    if (!rotated.includes(available[idx])) {
+                        rotated.push(available[idx]);
+                    }
+                }
+                return rotated;
+            }
+            
+            return selected;
+        }
+        
+        // === РАСЧЁТ ===
+        function calculate() {
+            const socialHours = parseInt(document.getElementById('socialHours').value);
+            const gameHours = parseInt(document.getElementById('gameHours').value);
+            const salary = parseInt(document.getElementById('salary').value);
+            
+            const totalHoursPerDay = socialHours + gameHours;
+            const totalHours = totalHoursPerDay * selectedDays;
+            const totalDays = Math.round(totalHours / 24);
+            const totalMonths = (totalDays / 30).toFixed(1);
+            const lostMoneyUSD = totalHours * salary;
+            const lostMoneyRUB = lostMoneyUSD * USD_TO_RUB;
+            
+            // Эквивалент в продуктах
+            const pdfCount = Math.floor(lostMoneyUSD / 10);
+            const controlCount = Math.floor(lostMoneyUSD / 35);
+            const consultCount = Math.floor(lostMoneyUSD / 120);
+            
+            // Сколько часов работы = каждый продукт
+            const hoursForPdf = salary > 0 ? (10 / salary).toFixed(1) : '∞';
+            const hoursForControl = salary > 0 ? (35 / salary).toFixed(1) : '∞';
+            const hoursForConsult = salary > 0 ? (120 / salary).toFixed(1) : '∞';
+            
+            currentTotalHours = totalHours;
+            refreshCount = 0;
+            currentSkillSet = 0;
+            
+            const skills = getSkillsForTime(totalHours, 0);
+            
+            // Форматирование чисел
+            const formatNum = (n) => n.toLocaleString('ru-RU');
+            const formatMoney = (n) => n.toLocaleString('ru-RU', { maximumFractionDigits: 0 });
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <!-- ПОТЕРЯННОЕ ВРЕМЯ -->
+                <div class="result-card">
+                    <h3>Потерянное время</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Всего часов</span>
+                        <span class="stat-value">${formatNum(totalHours)}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">В днях</span>
+                        <span class="stat-value">${formatNum(totalDays)}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">В месяцах</span>
+                        <span class="stat-value">${totalMonths}</span>
+                    </div>
+                </div>
+                
+                <!-- ФИНАНСОВЫЕ ПОТЕРИ -->
+                <div class="result-card">
+                    <h3>Упущенный доход</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">В долларах</span>
+                        <span class="stat-value danger">
+                            $${formatMoney(lostMoneyUSD)}
+                            <span class="rub">≈ ${formatMoney(lostMoneyRUB)} ₽</span>
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- ЭКВИВАЛЕНТ -->
+                <div class="result-card">
+                    <h3>Эквивалент в продуктах</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">PDF-гайд «14 дней»<br><span style="font-size:11px;color:var(--text-muted)">$10 · 900 ₽</span></span>
+                        <span class="stat-value">${pdfCount} шт.</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">CONTROL Community<br><span style="font-size:11px;color:var(--text-muted)">$35 · 3 150 ₽</span></span>
+                        <span class="stat-value">${controlCount} шт.</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Личная консультация<br><span style="font-size:11px;color:var(--text-muted)">$120 · 10 800 ₽</span></span>
+                        <span class="stat-value">${consultCount} шт.</span>
+                    </div>
+                </div>
+                
+                <!-- НАВЫКИ -->
+                <div class="skills-card" id="skillsCard">
+                    <h3>Что можно освоить за ${formatNum(totalHours)} часов</h3>
+                    ${skills.map((skill, index) => `
+                        <div class="skill-item" style="animation-delay: ${0.1 + index * 0.08}s">
+                            <span class="skill-number">${String(index + 1).padStart(2, '0')}</span>
+                            <div>
+                                <div class="skill-name">${skill.name}</div>
+                                <div class="skill-meta">${skill.hours} часов · ${skill.category}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="refreshSkills()">Другие навыки</button>
+                    <button class="action-btn" onclick="shareResults()">Поделиться</button>
+                </div>
+                <div class="refresh-counter" id="refreshCounter"></div>
+                
+                <!-- ПОДОГРЕВ -->
+                <div class="heating-block">
+                    <div class="line">Ты тратишь <span class="accent">${totalHoursPerDay} ч/день</span> впустую.</div>
+                    <div class="line">За ${selectedPeriod} это <span class="accent">${formatNum(totalHours)} часов</span>.</div>
+                    <div class="line">Это твоя жизнь. Верни контроль.</div>
+                </div>
+                
+                <!-- ТАРИФЫ -->
+                <div class="tariffs-title">Выбери свой путь</div>
+                
+                <div class="tariff" onclick="openModal('PDF-гайд «14 дней»')">
+                    <div class="tariff-header">
+                        <div class="tariff-name">PDF-гайд «14 дней»</div>
+                    </div>
+                    <div class="tariff-price">$10</div>
+                    <div class="tariff-price-rub">≈ 900 ₽</div>
+                    <ul class="tariff-features">
+                        <li>Пошаговая инструкция на 14 дней</li>
+                        <li>Вывод из цифровой зависимости</li>
+                        <li>Возвращение контроля над временем</li>
+                    </ul>
+                    <button class="tariff-btn">Начать</button>
+                </div>
+                
+                <div class="tariff" onclick="openModal('CONTROL Community')">
+                    <div class="tariff-header">
+                        <div class="tariff-name">CONTROL Community</div>
+                        <div class="tariff-badge">Хит</div>
+                    </div>
+                    <div class="tariff-price">$35</div>
+                    <div class="tariff-price-rub">≈ 3 150 ₽</div>
+                    <ul class="tariff-features">
+                        <li>Доступ навсегда</li>
+                        <li>Все материалы и практики</li>
+                        <li>PDF-гайд «14 дней» в подарок</li>
+                        <li>Закрытое комьюнити</li>
+                    </ul>
+                    <button class="tariff-btn">Вступить</button>
+                </div>
+                
+                <div class="tariff featured" onclick="openModal('Личная консультация')">
+                    <div class="tariff-header">
+                        <div class="tariff-name">Личная консультация</div>
+                    </div>
+                    <div class="tariff-price">$120</div>
+                    <div class="tariff-price-rub">≈ 10 800 ₽</div>
+                    <ul class="tariff-features">
+                        <li>Личный созвон (60 минут)</li>
+                        <li>2 недели корректировок в переписке</li>
+                        <li>CONTROL Community навсегда</li>
+                        <li>PDF-гайд «14 дней» в подарок</li>
+                    </ul>
+                    <button class="tariff-btn">Записаться</button>
+                </div>
+                
+                <!-- ССЫЛКА НА КАНАЛ -->
+                <div class="channel-link">
+                    <a href="https://t.me/nmstupx" target="_blank">Подписаться на канал @nmstupx</a>
+                </div>
+            `;
+            
+            resultsDiv.classList.add('show');
+            
+            setTimeout(() => {
+                resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+        
+        // === ОБНОВЛЕНИЕ НАВЫКОВ ===
+        function refreshSkills() {
+            if (refreshCount >= 3) {
+                refreshCount = 0;
+                currentSkillSet = 0;
+            } else {
+                refreshCount++;
+                currentSkillSet++;
+            }
+            
+            const skills = getSkillsForTime(currentTotalHours, currentSkillSet);
+            const skillsCard = document.getElementById('skillsCard');
+            const formatNum = (n) => n.toLocaleString('ru-RU');
+            
+            if (skillsCard) {
+                skillsCard.innerHTML = `
+                    <h3>Что можно освоить за ${formatNum(currentTotalHours)} часов</h3>
+                    ${skills.map((skill, index) => `
+                        <div class="skill-item" style="animation-delay: ${0.05 + index * 0.06}s">
+                            <span class="skill-number">${String(index + 1).padStart(2, '0')}</span>
+                            <div>
+                                <div class="skill-name">${skill.name}</div>
+                                <div class="skill-meta">${skill.hours} часов · ${skill.category}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                `;
+            }
+            
+            const counter = document.getElementById('refreshCounter');
+            if (counter) {
+                const remaining = 3 - refreshCount;
+                counter.textContent = remaining > 0 ? `Осталось обновлений: ${remaining}` : 'Список повторяется';
+            }
+        }
+        
+        // === ПОДЕЛИТЬСЯ ===
+        function shareResults() {
+            const socialHours = document.getElementById('socialHours').value;
+            const gameHours = document.getElementById('gameHours').value;
+            const salary = document.getElementById('salary').value;
+            const totalHoursPerDay = parseInt(socialHours) + parseInt(gameHours);
+            const totalHours = totalHoursPerDay * selectedDays;
+            const lostMoneyUSD = totalHours * parseInt(salary);
+            
+            const formatNum = (n) => n.toLocaleString('ru-RU');
+            
+            const shareText = `Я теряю ${formatNum(totalHours)} часов впустую. Это $${formatNum(lostMoneyUSD)}. Пора вернуть контроль.`;
+            const shareUrl = 'https://t.me/time_lost_calculator_bot/time_calculator';
+            
+            if (tg) {
+                tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`);
+            } else {
+                window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`, '_blank');
+            }
+        }
+        
+        // === МОДАЛЬНОЕ ОКНО ===
+        function openModal(productName) {
+            currentProductName = productName;
+            const modal = document.getElementById('modal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalText = document.getElementById('modalText');
+            
+            modalTitle.textContent = productName;
+            modalText.textContent = 'Выберите удобный способ связи для оформления';
+            
+            // Формируем ссылки с предзаполненным текстом
+            const message = `Здравствуйте! Хочу оформить: ${productName}`;
+            const encodedMessage = encodeURIComponent(message);
+            
+            document.getElementById('modalTelegram').href = `${TELEGRAM_LINK}?text=${encodedMessage}`;
+            document.getElementById('modalWhatsapp').href = `${WHATSAPP_LINK}?text=${encodedMessage}`;
+            
+            modal.classList.add('show');
+        }
+        
+        function closeModal() {
+            document.getElementById('modal').classList.remove('show');
+        }
+        
+        // Закрытие модалки по клику вне контента
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
